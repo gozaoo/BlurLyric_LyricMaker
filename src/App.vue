@@ -79,8 +79,8 @@
     },
     methods: {
       lyricParser,
-      startListen(){
-            
+      startListen() {
+
         window.addEventListener('keydown', (event) => {
           if (event.key === ' ') {
             event.preventDefault()
@@ -92,10 +92,10 @@
           }
         });
       },
-      stopListen(){
+      stopListen() {
 
         window.removeEventListener('keydown', this.handleSpacePress);
-      window.removeEventListener('keydown', this.handleSlashPress);
+        window.removeEventListener('keydown', this.handleSlashPress);
       },
       playMusic() {
         this.audioDom.play();
@@ -109,7 +109,7 @@
         if (this.currentWordIndex < currentLine.words.length) {
 
           const currentWord = currentLine.words[this.currentWordIndex];
-          currentWord.startTime = baseUtils.toFixed_Number(currentTime,3);
+          currentWord.startTime = baseUtils.toFixed_Number(currentTime, 3);
 
         }
 
@@ -119,8 +119,8 @@
         if (this.currentWordIndex > 0) {
           const previousWord = currentLine.words[this.currentWordIndex - 1];
 
-          previousWord.endTime = baseUtils.toFixed_Number(currentTime,3);
-          previousWord.duration = baseUtils.toFixed_Number(previousWord.endTime - previousWord.startTime,3)
+          previousWord.endTime = baseUtils.toFixed_Number(currentTime, 3);
+          previousWord.duration = baseUtils.toFixed_Number(previousWord.endTime - previousWord.startTime, 3)
         }
 
         if (this.currentWordIndex === currentLine.words.length) {
@@ -177,46 +177,76 @@
           this.audioDom.src = this.audioUrl;
         }
       },
-      导出(){
+      导出() {
         baseUtils.copy(lyricParser.toBLFfile(this.lyricObject))
       },
-      importLyric(type){
+      importLyric(type) {
         let content = this.lyricString
         switch (type) {
           case 'BLF':
             this.lyricObject = lyricParser.parseBLFlyric(content)
             break;
-        
+
           case 'YRC':
             this.lyricObject = lyricParser.parseYRClyric(content)
             break;
-        
+
           case 'LRC':
             this.lyricObject = lyricParser.parseLRClyric(content)
             break;
-        
+
           default:
             break;
         }
       },
-    addWord(event,lineIndex,wordIndex) {
-      //keyCode对于老版本的浏览器
-      //key是现代浏览器推荐的方式
-      if (event.key === '\\' || event.keyCode === 220) {
-        console.log(lineIndex,wordIndex);
-        event.preventDefault()
-        this.lyricObject.lines[lineIndex].words.splice(wordIndex+1,0,{
+      addWord(event, lineIndex, wordIndex) {
+        //keyCode对于老版本的浏览器
+        //key是现代浏览器推荐的方式
+        if (event.key === '\\' || event.keyCode === 220) {
+          console.log(lineIndex, wordIndex);
+          event.preventDefault()
+          this.lyricObject.lines[lineIndex].words.splice(wordIndex + 1, 0, {
+            "startTime": 0,
+            "duration": 1,
+            "endTime": 1,
+            "word": ""
+          })
+        }
+        if (event.keyCode === 46) {
+          console.log(lineIndex, wordIndex);
+          event.preventDefault()
+          this.lyricObject.lines[lineIndex].words.splice(wordIndex, 1)
+          console.log(this.lyricObject.lines[lineIndex].words);
+          
+          if (this.lyricObject.lines[lineIndex].words.length == 0) {
+            this.lyricObject.lines.splice(lineIndex, 1)
+          }
+        }
+      },
+      addALine(event, lineIndex) {
+        this.lyricObject.lines.splice(lineIndex + 1, 0, 
+        {
+              "startTime": 1.5,
+              "duration": 2,
+              "endTime": 3.5,
+              "words": [{
                   "startTime": 0,
                   "duration": 1,
                   "endTime": 1,
-                  "word": ""
-                })
+                  "word": "new "
+                },
+                {
+                  "startTime": 1.5,
+                  "duration": 0.5,
+                  "endTime": 2,
+                  "word": "line"
+                }
+              ],
+              "text": "new line"
+            })
       }
-    }
     },
     mounted() {
-      // let tempYrc =
-        // this.lyricObject = lyricParser.parseYRClyric(tempYrc)
       let audioTimeUpdater = () => {
         if (!this.audioDom.paused) {
           this.parsedData.currentTime = this.parseDuration(this.audioDom.currentTime)
@@ -226,11 +256,11 @@
       }
       audioTimeUpdater()
     },
-    watch:{
-      currentWordIndex:{
-        handler(newVal){
-          console.log(newVal);
-          
+    watch: {
+      currentWordIndex: {
+        handler(newVal) {
+          // console.log(newVal);
+
         }
       }
     }
@@ -253,8 +283,9 @@
       <button @click="audioDom.pause()">暂停</button>
       <button @click="startListen()">开始录制</button>
       <button @click="stopListen()">停止录制</button>
-      {{ this.parsedData.currentTime }}
+      <!-- {{ this.parsedData.currentTime }}
       {{ this.parsedData.duration }} <br>
+      -->
       <button @click="导出()">导出为BLF到粘贴板</button><br>
       <textarea v-model="lyricString"></textarea><br>
       <button @click="importLyric('YRC')">以YRC格式导入</button>
@@ -271,12 +302,16 @@
         mainText:
         <div class="lines">
           <div v-for="(value1,index1) in lyricObject.lines" class="line">
-      <button @click="this.audioDom.currentTime = value1.startTime-2;currentLineIndex = index1;currentWordIndex = -1">{{ index1 }} </button>
+            <button
+              @click="this.audioDom.currentTime = value1.startTime-2;currentLineIndex = index1;currentWordIndex = -1">{{ index1 }}
+            </button>
 
-            
-            <inputVue  @keydown="(event)=>{addWord(event,index1,index2)}" :class="[(currentLineIndex==index1&&currentWordIndex==index2)?'active':'']" v-for="(value2,index2) in value1.words" type="text"
+
+            <inputVue @keydown="(event)=>{addWord(event,index1,index2)}"
+              :class="[(currentLineIndex==index1&&currentWordIndex==index2)?'active':'']"
+              v-for="(value2,index2) in value1.words" type="text"
               v-model="lyricObject.lines[index1].words[index2].word" />
-            <button @click="addALine"> + </button>
+            <button @click="(event)=>{addALine(event,index1)}"> + </button>
 
           </div>
         </div>
@@ -344,6 +379,7 @@
     height: 74%;
     overflow: auto
   }
+
   .active * {
     outline: 2px solid #076cbc;
     box-shadow: 0 0 6px #076cbc;
